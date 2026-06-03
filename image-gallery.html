@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Image Gallery</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root { --bg:#f5f0eb; --surface:#fff; --text:#1a1a1a; --muted:#888; --accent:#c17b3f; }
+    body { background:var(--bg); font-family:Arial,sans-serif; color:var(--text); min-height:100vh; }
+    header { text-align:center; padding:48px 20px 28px; }
+    header h1 { font-size:clamp(28px,5vw,48px); letter-spacing:-0.02em; font-family:Georgia,serif; }
+    header p { color:var(--muted); margin-top:8px; font-size:14px; }
+    .filters { display:flex; justify-content:center; flex-wrap:wrap; gap:10px; padding:0 20px 32px; }
+    .filter-btn { cursor:pointer; padding:8px 20px; border-radius:100px; font-size:13px; font-weight:500; color:var(--muted); background:var(--surface); border:1.5px solid #e0d8d0; transition:all 0.2s; }
+    .filter-btn:hover,.filter-btn.active { background:var(--accent); color:#fff; border-color:var(--accent); }
+    .gallery { columns:3; column-gap:14px; max-width:1100px; margin:0 auto; padding:0 16px 60px; }
+    @media(max-width:768px){.gallery{columns:2;}}
+    @media(max-width:480px){.gallery{columns:1;}}
+    .gallery-item { break-inside:avoid; margin-bottom:14px; border-radius:16px; overflow:hidden; position:relative; cursor:pointer; box-shadow:0 4px 20px rgba(0,0,0,0.10); transition:transform 0.3s; }
+    .gallery-item:hover { transform:translateY(-4px); }
+    .img-placeholder { width:100%; display:flex; align-items:center; justify-content:center; font-size:52px; transition:transform 0.4s; }
+    .gallery-item:hover .img-placeholder { transform:scale(1.06); }
+    .overlay { position:absolute; inset:0; background:linear-gradient(to top,rgba(0,0,0,0.6) 0%,transparent 55%); opacity:0; transition:opacity 0.3s; display:flex; align-items:flex-end; padding:14px; }
+    .gallery-item:hover .overlay { opacity:1; }
+    .overlay-text { color:#fff; font-size:13px; font-weight:600; }
+    .overlay-tag { font-size:10px; color:rgba(255,255,255,0.7); text-transform:uppercase; letter-spacing:0.1em; margin-top:2px; }
+    .gallery-item.hidden { display:none; }
+    .lightbox { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.93); z-index:1000; align-items:center; justify-content:center; }
+    .lightbox.open { display:flex; }
+    .lightbox-inner { display:flex; flex-direction:column; align-items:center; gap:16px; padding:20px; }
+    .lb-card { width:min(360px,82vw); height:min(360px,82vw); border-radius:20px; display:flex; align-items:center; justify-content:center; font-size:90px; box-shadow:0 20px 60px rgba(0,0,0,0.5); }
+    .lightbox-caption { color:#fff; font-size:18px; text-align:center; font-family:Georgia,serif; }
+    .lightbox-close { position:fixed; top:20px; right:20px; background:rgba(255,255,255,0.15); border:none; color:#fff; font-size:20px; cursor:pointer; width:42px; height:42px; border-radius:50%; display:flex; align-items:center; justify-content:center; }
+    .lightbox-nav { position:fixed; top:50%; transform:translateY(-50%); background:rgba(255,255,255,0.15); border:none; color:#fff; font-size:30px; cursor:pointer; width:48px; height:48px; border-radius:50%; display:flex; align-items:center; justify-content:center; }
+    .lightbox-prev { left:10px; }
+    .lightbox-next { right:10px; }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>Image Gallery</h1>
+  <p>Hover to explore · Click to expand</p>
+</header>
+
+<div class="filters">
+  <button class="filter-btn active" data-filter="all">All</button>
+  <button class="filter-btn" data-filter="nature">Nature</button>
+  <button class="filter-btn" data-filter="city">City</button>
+  <button class="filter-btn" data-filter="abstract">Abstract</button>
+  <button class="filter-btn" data-filter="animals">Animals</button>
+</div>
+
+<div class="gallery" id="gallery">
+  <div class="gallery-item" data-category="nature" data-title="Mountain Sunrise" data-gradient="linear-gradient(135deg,#f6d365,#fda085)" data-emoji="🏔️">
+    <div class="img-placeholder" style="background:linear-gradient(135deg,#f6d365,#fda085);height:200px;">🏔️</div>
+    <div class="overlay"><div><div class="overlay-text">Mountain Sunrise</div><div class="overlay-tag">Nature</div></div></div>
+  </div>
+  <div class="gallery-item" data-category="city" data-title="City Lights" data-gradient="linear-gradient(135deg,#1a1a2e,#0f3460,#533483)" data-emoji="🌃">
+    <div class="img-placeholder" style="background:linear-gradient(135deg,#1a1a2e,#0f3460,#533483);height:260px;">🌃</div>
+    <div class="overlay"><div><div class="overlay-text">City Lights</div><div class="overlay-tag">City</div></div></div>
+  </div>
+  <div class="gallery-item" data-category="abstract" data-title="Color Flow" data-gradient="linear-gradient(135deg,#a18cd1,#fbc2eb)" data-emoji="🎨">
+    <div class="img-placeholder" style="background:linear-gradient(135deg,#a18cd1,#fbc2eb);height:180px;">🎨</div>
+    <div class="overlay"><div><div class="overlay-text">Color Flow</div><div class="overlay-tag">Abstract</div></div></div>
+  </div>
+  <div class="gallery-item" data-category="animals" data-title="Lone Wolf" data-gradient="linear-gradient(135deg,#2c3e50,#4ca1af)" data-emoji="🐺">
+    <div class="img-placeholder" style="background:linear-gradient(135deg,#2c3e50,#4ca1af);height:230px;">🐺</div>
+    <div class="overlay"><div><div class="overlay-text">Lone Wolf</div><div class="overlay-tag">Animals</div></div></div>
+  </div>
+  <div class="gallery-item" data-category="nature" data-title="Green Forest" data-gradient="linear-gradient(135deg,#134e5e,#71b280)" data-emoji="🌲">
+    <div class="img-placeholder" style="background:linear-gradient(135deg,#134e5e,#71b280);height:210px;">🌲</div>
+    <div class="overlay"><div><div class="overlay-text">Green Forest</div><div class="overlay-tag">Nature</div></div></div>
+  </div>
+  <div class="gallery-item" data-category="city" data-title="Urban Streets" data-gradient="linear-gradient(135deg,#373b44,#4286f4)" data-emoji="🏙️">
+    <div class="img-placeholder" style="background:linear-gradient(135deg,#373b44,#4286f4);height:190px;">🏙️</div>
+    <div class="overlay"><div><div class="overlay-text">Urban Streets</div><div class="overlay-tag">City</div></div></div>
+  </div>
+  <div class="gallery-item" data-category="abstract" data-title="Neon Dreams" data-gradient="linear-gradient(135deg,#f953c6,#b91d73)" data-emoji="✨">
+    <div class="img-placeholder" style="background:linear-gradient(135deg,#f953c6,#b91d73);height:250px;">✨</div>
+    <div class="overlay"><div><div class="overlay-text">Neon Dreams</div><div class="overlay-tag">Abstract</div></div></div>
+  </div>
+  <div class="gallery-item" data-category="animals" data-title="Ocean Turtle" data-gradient="linear-gradient(135deg,#0052d4,#6fb1fc)" data-emoji="🐢">
+    <div class="img-placeholder" style="background:linear-gradient(135deg,#0052d4,#6fb1fc);height:200px;">🐢</div>
+    <div class="overlay"><div><div class="overlay-text">Ocean Turtle</div><div class="overlay-tag">Animals</div></div></div>
+  </div>
+  <div class="gallery-item" data-category="nature" data-title="Waterfall" data-gradient="linear-gradient(135deg,#43cea2,#185a9d)" data-emoji="🌊">
+    <div class="img-placeholder" style="background:linear-gradient(135deg,#43cea2,#185a9d);height:240px;">🌊</div>
+    <div class="overlay"><div><div class="overlay-text">Waterfall</div><div class="overlay-tag">Nature</div></div></div>
+  </div>
+  <div class="gallery-item" data-category="city" data-title="Bridge at Dusk" data-gradient="linear-gradient(135deg,#f7971e,#ffd200)" data-emoji="🌉">
+    <div class="img-placeholder" style="background:linear-gradient(135deg,#f7971e,#ffd200);height:190px;">🌉</div>
+    <div class="overlay"><div><div class="overlay-text">Bridge at Dusk</div><div class="overlay-tag">City</div></div></div>
+  </div>
+  <div class="gallery-item" data-category="animals" data-title="Majestic Lion" data-gradient="linear-gradient(135deg,#c6a34a,#8b5e0a)" data-emoji="🦁">
+    <div class="img-placeholder" style="background:linear-gradient(135deg,#c6a34a,#8b5e0a);height:220px;">🦁</div>
+    <div class="overlay"><div><div class="overlay-text">Majestic Lion</div><div class="overlay-tag">Animals</div></div></div>
+  </div>
+  <div class="gallery-item" data-category="abstract" data-title="Light Waves" data-gradient="linear-gradient(135deg,#00c6ff,#0072ff)" data-emoji="💫">
+    <div class="img-placeholder" style="background:linear-gradient(135deg,#00c6ff,#0072ff);height:180px;">💫</div>
+    <div class="overlay"><div><div class="overlay-text">Light Waves</div><div class="overlay-tag">Abstract</div></div></div>
+  </div>
+</div>
+
+<div class="lightbox" id="lightbox">
+  <button class="lightbox-close" id="lbClose">✕</button>
+  <button class="lightbox-nav lightbox-prev" id="lbPrev">‹</button>
+  <button class="lightbox-nav lightbox-next" id="lbNext">›</button>
+  <div class="lightbox-inner">
+    <div class="lb-card" id="lbCard"></div>
+    <div class="lightbox-caption" id="lbCaption"></div>
+  </div>
+</div>
+
+<script>
+  const items = Array.from(document.querySelectorAll('.gallery-item'));
+  const lightbox = document.getElementById('lightbox');
+  const lbCard = document.getElementById('lbCard');
+  const lbCaption = document.getElementById('lbCaption');
+  let currentIndex = 0;
+  let visibleItems = [...items];
+
+  document.querySelectorAll('.filter-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      const filter = btn.dataset.filter;
+      items.forEach(item => {
+        item.classList.toggle('hidden', filter !== 'all' && item.dataset.category !== filter);
+      });
+      visibleItems = items.filter(i => !i.classList.contains('hidden'));
+    });
+  });
+
+  items.forEach(item => {
+    item.addEventListener('click', () => {
+      visibleItems = items.filter(i => !i.classList.contains('hidden'));
+      currentIndex = visibleItems.indexOf(item);
+      openLightbox(currentIndex);
+    });
+  });
+
+  function openLightbox(index) {
+    const item = visibleItems[index];
+    lbCard.style.background = item.dataset.gradient;
+    lbCard.textContent = item.dataset.emoji;
+    lbCaption.textContent = item.dataset.title;
+    lightbox.classList.add('open');
+  }
+
+  document.getElementById('lbClose').addEventListener('click', () => lightbox.classList.remove('open'));
+  document.getElementById('lbPrev').addEventListener('click', () => {
+    currentIndex = (currentIndex - 1 + visibleItems.length) % visibleItems.length;
+    openLightbox(currentIndex);
+  });
+  document.getElementById('lbNext').addEventListener('click', () => {
+    currentIndex = (currentIndex + 1) % visibleItems.length;
+    openLightbox(currentIndex);
+  });
+  document.addEventListener('keydown', e => {
+    if (!lightbox.classList.contains('open')) return;
+    if (e.key === 'ArrowRight') { currentIndex=(currentIndex+1)%visibleItems.length; openLightbox(currentIndex); }
+    if (e.key === 'ArrowLeft')  { currentIndex=(currentIndex-1+visibleItems.length)%visibleItems.length; openLightbox(currentIndex); }
+    if (e.key === 'Escape') lightbox.classList.remove('open');
+  });
+  lightbox.addEventListener('click', e => { if(e.target===lightbox) lightbox.classList.remove('open'); });
+</script>
+</body>
+</html>
